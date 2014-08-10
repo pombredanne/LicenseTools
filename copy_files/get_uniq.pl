@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+use strict;
 use File::Basename;
 use File::Copy;
 use List::MoreUtils qw(firstidx);
@@ -19,32 +20,65 @@ Usage $0 -t <path> threshold
 
 my $test = exists $opts{t};
 
-$dir = $ARGV[0];
-$threshold = $ARGV[1];
+my $dir = $ARGV[0];
+my $src_name = $ARGV[1];
+
+my $threshold = $ARGV[2];
 if (!$threshold) { 
-	$threshold = 0;
+	$threshold = 2;
 }
 #$dir = 'getopt.c/src/';
 
-if(!$dir) {
+if(!$dir && !$src_name) {
 	die "Directory need!";
 }
+
+my ($ext) = $src_name =~ /(\.[^.]+)$/;
+$ext =~ s/\.//;
+my $ccfx_type = '';
+
+
+if ($ext eq 'c' || $ext eq 'cpp')  { 
+	$ccfx_type = 'cpp'; 
+} elsif ($ext eq 'java') {
+	$ccfx_type = 'java';
+} else {
+	die "Unkown source file extension [$ext].\n";
+}
+
+my $ccfx_suffix ='';
+
+if ($ccfx_type eq 'cpp')  { 
+
+	$ccfx_suffix = '.cpp.2_0_0_2.default.ccfxprep';
+
+} elsif ($ccfx_type eq 'java') {
+
+	$ccfx_suffix = '.java.2_0_0_0.default.ccfxprep';
+
+} else {
+}
+
+
+$dir = "${dir}${src_name}/src/";
 
 if (substr($dir,-1) eq "/") {
 	chop $dir;
 }
-$dir_slash=$dir."/";
+my $dir_slash=$dir."/";
 
-$prepared=`find ${dir_slash}*.ccfxprep`;
+my $prepared=`find ${dir_slash}*${ccfx_suffix} 2>/dev/null`;
+
 
 if (!$prepared) {
 	print "Preparing...\n";
-	`ccfx D cpp ${dir_slash}*.c`;
-	`perl -i.back -pe 's/^[^\t]+\t//' ${dir_slash}*c.cpp.2_0_0_2.default.ccfxprep`;
+	`ccfx D ${ccfx_type} ${dir_slash}*.$ext`;
+	`perl -i.back -pe 's/^[^\t]+\t//' ${dir_slash}*${ccfx_suffix}`;
 }
 
-$exec = "sha1sum ${dir_slash}*.ccfxprep | cut -d ' ' -f 1 | sort | uniq -c | sort -n";
+my $exec = "sha1sum ${dir_slash}*${ccfx_suffix} | cut -d ' ' -f 1 | sort | uniq -c | sort -n";
 
+my @rankings;
 if ($test) {
 	print `$exec`;
 	exit 0;
@@ -53,14 +87,14 @@ if ($test) {
 }
 
 
-@topHash;
-$count = 0;
-foreach $sha (@rankings) {
+my @topHash;
+my $count = 0;
+foreach my $sha (@rankings) {
 	$sha =~ s/^\s+|\s+$//g;
 	
 	#print "$sha\n";
 	
-	($number, $hash) = split(/ /, $sha);
+	(my $number, my $hash) = split(/ /, $sha);
 	
 	if ($number >= $threshold) {
 		push(@topHash, $hash);
@@ -70,33 +104,33 @@ foreach $sha (@rankings) {
 	$count++;
 }
 
-print "$count group(s) of identical files found.\n";
+print "$count group(s) of identical files found for [$src_name]. ";
 
-@files=`sha1sum ${dir_slash}*.ccfxprep|sort`;
+my @files=`sha1sum ${dir_slash}*${ccfx_suffix} | sort`;
 
-$prevHash='';
+my $prevHash='';
 $count=0;
-foreach $item (@files) {
+foreach my $item (@files) {
 
-	($hash,$file)=split(/ /,$item); # extract hash value and file name
+	(my $hash, my $file)=split(/ /,$item); # extract hash value and file name
 	
-	$idx = firstidx { $_ eq $hash } @topHash;
+	my $idx = firstidx { $_ eq $hash } @topHash;
 	
 	if ($idx >= 0) {
 	
-		$newpath = "${dir}_uniq_${idx}/";
+		my $newpath = "${dir}_uniq_${idx}/";
 		if (!-d $newpath) {
 			mkdir $newpath;
 		}
 		
 		chomp $file;
 		$file =~ s/\*//; # remove the leading '*'
-		$file =~ s/.cpp.2_0_0_2.default.ccfxprep//; # get the original source file
+		$file =~ s/${ccfx_suffix}//; # get the original source file
 	
 		copy($file, $newpath);
-		print '.';
+		# print '.';
 		$count++;
 	}
 }
 
-print "\n\n$count files copied.";
+print "$count files copied.\n";

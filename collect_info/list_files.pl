@@ -6,10 +6,18 @@ use List::MoreUtils 'first_index';
 use strict;
 
 
-my $startPkgName = @ARGV[0];
+my $src_root = @ARGV[0];
+my $stat_root = @ARGV[1];
+# my $startPkgName = @ARGV[0];
+
+
+my $database = "files.db";
+
+if (-e $database) {
+  exit 0;
+}
 
 my $driver   = "SQLite"; 
-my $database = "files.db";
 my $dsn = "DBI:$driver:dbname=$database";
 my $userid = "";
 my $password = "";
@@ -28,22 +36,16 @@ if($rv < 0){
 
 my $sth = $dbh->prepare('INSERT INTO FILE (PKGNAME, PATH, BASENAME, EXT) VALUES (?, ?, ?, ?)');
 
-my $debug=1;
 
-my $debian_root="/home/t-kanda/HDQL16/src_debian-750/";
-if ($debug) {
-# $debian_root="/home/wuyuhao/test/";
-}
-
-my @pkgs=`find $debian_root -mindepth 1 -maxdepth 1 -type d`;
+my @pkgs=`find $src_root -mindepth 1 -maxdepth 1 -type d`;
 
 
-if ($startPkgName) {
- my $index = first_index{/$startPkgName$/} @pkgs;
- if ($index > 0) {
-  splice @pkgs, 0, $index;
- }
-}
+# if ($startPkgName) {
+#  my $index = first_index{/$startPkgName$/} @pkgs;
+#  if ($index > 0) {
+#   splice @pkgs, 0, $index;
+#  }
+# }
 
 my $pkgCount = @pkgs;
 print "Package Number: $pkgCount\n";
@@ -70,6 +72,7 @@ foreach my $pkg (@pkgs) {
   chomp $path;
   chomp $suffix;
 
+  # print "Inserting ($pkg_name, $path, $name, $suffix)\n";
   my @values=($pkg_name, $path, $name, $suffix);
   $sth->execute(@values);
  }

@@ -1,0 +1,3 @@
+/cygdrive/d/MyProjects/Fedora/Src/
+cpp,c,java,
+50
