@@ -47,7 +47,7 @@ foreach my $ext (@exts)
 
 	while(my @row = $sth->fetchrow_array()) {
 	 
-	 print "$row[0]$row[1];$row[2]\n";
+	 #print "$row[0]$row[1];$row[2]\n";
 	 print $fh "$row[0]$row[1];$row[2]\n";
 	}
 
