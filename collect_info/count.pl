@@ -11,8 +11,9 @@ my $stat_root = @ARGV[1];
 
 my @exts= split(/,/, $_ext);
 
+my $database = "${stat_root}files.db";
+
 my $driver   = "SQLite"; 
-my $database = "files.db";
 my $dsn = "DBI:$driver:dbname=$database";
 my $userid = "";
 my $password = "";

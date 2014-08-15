@@ -5,11 +5,22 @@ use Getopt::Std;
 use File::Basename;
 use File::Copy;
 use File::Path qw(make_path);
+use Getopt::Std;
 
 
 
-#my %options=();
-#getopts("");
+my %opts = ();
+if (!getopts ("o",\%opts) or scalar(@ARGV) == 0) {
+print STDERR "
+Usage $0 -o <SrcFileName> <ProjectRoot> <OutputFolder>
+
+  -o output the package list.
+\n";
+
+    exit 1;
+}
+
+my $needOutput = exists $opts{o};
 
 my $srcFile = $ARGV[0];
 my $src_root = @ARGV[1];
@@ -25,8 +36,9 @@ if (!-d $srcFolder) {
 
 (my $name, my $path, my $suffix) = fileparse($srcFile,qr/\.[^.]*/);
 
-my $srcList = "$rootFolder$srcFile.list.txt";
-my $relationList = "$rootFolder$srcFile.map.txt";
+my $srcList = "${rootFolder}$srcFile.list.txt";
+my $relationList = "${rootFolder}$srcFile.map.txt";
+my $pkgList = "${rootFolder}PackageList.csv";
 
 
 if (!-e $srcList) {
@@ -37,6 +49,7 @@ if (!-e $srcList) {
 
 open my $listFh, "<$srcList";
 open my $mapFh, ">$relationList";
+open my $pkgFh, ">$pkgList";
 
 my @files=<$listFh>;
 
@@ -56,6 +69,7 @@ foreach my $file (@files) {
   	$count++;
   } else {
   	$newName = "${name}_$pkgName$suffix";
+    print $pkgFh "$pkgName,\n";
   	$count=0;
   }
   
@@ -69,3 +83,4 @@ foreach my $file (@files) {
 
 close $listFh or die$!;
 close $$mapFh or die$!;
+close $$pkgFh or die$!;

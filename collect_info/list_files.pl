@@ -11,7 +11,7 @@ my $stat_root = @ARGV[1];
 # my $startPkgName = @ARGV[0];
 
 
-my $database = "files.db";
+my $database = "${stat_root}files.db";
 
 if (-e $database) {
   exit 0;

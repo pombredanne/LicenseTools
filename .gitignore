@@ -216,5 +216,5 @@ pip-log.txt
 
 
 *.db
-*.txt
+
 *.c
