@@ -2,9 +2,13 @@
 
 use strict;
 use File::Path qw(make_path);
+use Time::Seconds;
+use Time::Piece;
 
 # Read configs
 open my $cfg, "<config.txt" or die "config.txt file needed.";
+open my $log, ">log.txt";
+
 my $src_root = GetCfg();
 my $exts = GetCfg();
 my $threshold = GetCfg();
@@ -29,11 +33,36 @@ if (!-d $copied_src) {
  
 open my $licFh, ">$licenseChange";
 
+
+my $oldTime;
+my $newTime;
+my $timeDiff;
+
+
+$oldTime = localtime;
+
 print "Listing files of folder: $src_root\n";
 print `collect_info/list_files.pl $src_root $stat_root`;
 
+$newTime = localtime;
+$timeDiff = $newTime - $oldTime;
+print $log "Listing used: ". $timeDiff->seconds ." sec(s)\n";
+
+
+
+$oldTime = localtime;
 print "Counting files with these extensions: ${exts}\n";
 `collect_info/count.pl '$exts' $stat_root`;
+
+$newTime = localtime;
+$timeDiff = $newTime - $oldTime;
+print $log "Counting used: ". $timeDiff->seconds ." sec(s)\n";
+
+
+my $copyTime=0;
+my $groupTime=0;
+my $licenseDetectionTime=0;
+my $changeDetectionTime=0;
 
 my @stat_files = `find $stat_root -type f -name 'statistics.*.txt'`;
 
@@ -41,19 +70,31 @@ foreach my $file (@stat_files) {
 
 	open(my $fh, "<$file");
 
-	my $count = 0;
 	while (<$fh>) {
 
-		if ($count >= $threshold) {
+		(my $src_name, my $num) = split(/;/, $_);
+		chomp $num;
+
+		if ($num < $threshold) {
 			last;
 		}
-		(my $src_name, my $num) = split(/;/, $_);
 
+		$oldTime = localtime;
+		print "Copying files: [$src_name]\n";
 		#print "copy_files/copy.pl $src_name $src_root $copied_src\n";
 		print `copy_files/copy.pl $src_name $src_root $copied_src`;
+		$newTime = localtime;
+		$timeDiff = $newTime - $oldTime;
+		$copyTime += $timeDiff->seconds;
+		
 
+		$oldTime = localtime;
+		print "Grouping...\n";
 		# print "copy_files/get_uniq.pl ${copied_src} ${src_name}\n";
 		print `copy_files/get_uniq.pl ${copied_src} ${src_name}`;
+		$newTime = localtime;
+		$timeDiff = $newTime - $oldTime;
+		$groupTime += $timeDiff->seconds;
 
 		my @folders = `find ${copied_src}${src_name} -type d -name 'src_uniq_*'`;
 
@@ -62,11 +103,20 @@ foreach my $file (@stat_files) {
 		foreach my $folder (@folders) {
 
 			chomp $folder;
-			# print "find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -o $folder --";
-			`find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -o $folder -- 2>/dev/null`;
 
-			# print "analyse/check_license_result.pl -d $folder\n";
+			$oldTime = localtime;
+			 print "License detection: [$folder]\n";
+			`find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null`;
+			$newTime = localtime;
+			$timeDiff = $newTime - $oldTime;
+			$licenseDetectionTime += $timeDiff->seconds;
+
+			$oldTime = localtime;
+#			 print "analyse/check_license_result.pl -d $folder\n";
 			my $hasDiff = `analyse/check_license_result.pl -d $folder`;
+			$newTime = localtime;
+			$timeDiff = $newTime - $oldTime;
+			$changeDetectionTime += $timeDiff->seconds;
 
 			if ($hasDiff) {
 				# print "hasdiff: $hasDiff\n";
@@ -74,7 +124,6 @@ foreach my $file (@stat_files) {
 			}
 		}
 
-		$count++;
 	}
 
 	close($fh);
@@ -82,9 +131,17 @@ foreach my $file (@stat_files) {
 
 close $licFh;
 
+print $log "Copying used: ".$copyTime." sec(s)\n";
+print $log "Grouping used: ".$groupTime." sec(s)\n";
+print $log "License detection used: ".$licenseDetectionTime." sec(s)\n";
+print $log "License change detection used: ".$changeDetectionTime." sec(s)\n";
+
+close $log;
+
 sub GetCfg
 {
 	my $line = <$cfg>;
 	chomp $line;
 	return $line;
 }
+

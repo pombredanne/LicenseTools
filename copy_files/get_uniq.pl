@@ -7,6 +7,8 @@ use List::MoreUtils qw(firstidx);
 use Getopt::Std;
 use DBI;
 
+my $ccfx_path = '/usr/local/ccfx/ubuntu32/ccfx';
+
 my %opts = ();
 if (!getopts ("t",\%opts) or scalar(@ARGV) == 0) {
 print STDERR "
@@ -72,7 +74,7 @@ my $prepared=`find ${dir_slash}*${ccfx_suffix} 2>/dev/null`;
 
 if (!$prepared) {
 	print "Preparing...\n";
-	`ccfx D ${ccfx_type} ${dir_slash}*.$ext`;
+	`$ccfx_path D ${ccfx_type} ${dir_slash}*.$ext`;
 	`perl -i.back -pe 's/^[^\t]+\t//' ${dir_slash}*${ccfx_suffix}`;
 }
 
@@ -112,24 +114,28 @@ my $prevHash='';
 $count=0;
 foreach my $item (@files) {
 
-	(my $hash, my $file)=split(/ /,$item); # extract hash value and file name
+	(my $hash, my $file)=split(/  /,$item); # extract hash value and file name
 	
 	my $idx = firstidx { $_ eq $hash } @topHash;
 	
 	if ($idx >= 0) {
 	
-		my $newpath = "${dir}_uniq_${idx}/";
-		if (!-d $newpath) {
-			mkdir $newpath;
-		}
-		
-		chomp $file;
 		$file =~ s/\*//; # remove the leading '*'
-		$file =~ s/${ccfx_suffix}//; # get the original source file
+		my $lines = `wc -l < $file`;
+		if ($lines > 20) {
+
+			my $newpath = "${dir}_uniq_${idx}/";
+			if (!-d $newpath) {
+				mkdir $newpath;
+			}
+		
+			chomp $file;
+			$file =~ s/${ccfx_suffix}//; # get the original source file
 	
-		copy($file, $newpath);
-		# print '.';
-		$count++;
+			copy($file, $newpath);
+			# print '.';
+			$count++;
+		}
 	}
 }
 
