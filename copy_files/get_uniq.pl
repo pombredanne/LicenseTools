@@ -73,9 +73,9 @@ my $prepared=`find ${dir_slash}*${ccfx_suffix} 2>/dev/null`;
 
 
 if (!$prepared) {
-	print "Preparing...\n";
+	print "CCFinder processing...\n";
 	`$ccfx_path D ${ccfx_type} ${dir_slash}*.$ext`;
-	`perl -i.back -pe 's/^[^\t]+\t//' ${dir_slash}*${ccfx_suffix}`;
+	`perl -i -pe 's/^[^\t]+\t//' ${dir_slash}*${ccfx_suffix}`;
 }
 
 my $exec = "sha1sum ${dir_slash}*${ccfx_suffix} | cut -d ' ' -f 1 | sort | uniq -c | sort -n";

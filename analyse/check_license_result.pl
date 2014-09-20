@@ -36,27 +36,61 @@ my $rv = $sth->execute() or die $DBI::errstr;
 if($rv < 0){
    print $DBI::errstr;
 }
+my $hasNONE=0;
+my $Lic1='';
+my $Lic2=0;
 
 my $prevLicense = '';
-my $hasDiff = 0;
+my $inconsis = 0;
 
 my @row = $sth->fetchrow_array();
+chomp $row[0];
 $prevLicense = $row[0];
 
-while(@row = $sth->fetchrow_array()) {
+if ($row[0] eq "NONE") {
+	$hasNONE = 1;
+} else {
+	$Lic1 = $row[0];
+}
 
-	if ($prevLicense ne $row[0]) {
-		$hasDiff = 1;
-		last;
+while(@row = $sth->fetchrow_array()) {
+chomp $row[0];
+
+	if ($row[0] eq "NONE") {
+		$hasNONE = 1;
+	} else {
+		if ($prevLicense ne $row[0]) {
+
+			if (!$Lic1) {
+				$Lic1 = $row[0];
+			} elsif ($row[0] ne $Lic1) {
+
+				$Lic2 = $row[0];
+
+				if ($hasNONE) {
+					# Now have NONE, L1, L2.
+					last;
+				}
+			}
+		}
 	}
 	$prevLicense = $row[0];
 }
 
+if (($hasNONE && !$Lic1 && !$Lic2) || (!$hasNONE && $Lic1 && !$Lic2) ) {
+	$inconsis = '';
+} elsif (!$hasNONE && $Lic1 && $Lic2) {
+	$inconsis = 'M';
+} elsif ($hasNONE && $Lic1 && !$Lic2) {
+	$inconsis = 'R';
+} elsif ($hasNONE && $Lic1 && $Lic2) {
+	$inconsis = 'A';
+} else {
+	$inconsis = 'UNKNOWN';
+}
+
+print $inconsis;
+
 $sth->finish();
-
 $dbh->disconnect();
-					  
-print $hasDiff;
-
-
 

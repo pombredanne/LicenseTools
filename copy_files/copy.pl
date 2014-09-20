@@ -12,7 +12,7 @@ use Getopt::Std;
 my %opts = ();
 if (!getopts ("o",\%opts) or scalar(@ARGV) == 0) {
 print STDERR "
-Usage $0 -o <SrcFileName> <ProjectRoot> <OutputFolder>
+Usage $0 -o <SrcFileName> <StatisticsRoot> <OutputFolder>
 
   -o output the package list.
 \n";
@@ -23,7 +23,7 @@ Usage $0 -o <SrcFileName> <ProjectRoot> <OutputFolder>
 my $needOutput = exists $opts{o};
 
 my $srcFile = $ARGV[0];
-my $src_root = @ARGV[1];
+my $stat_root = @ARGV[1];
 my $dest_root = @ARGV[2];
 
 my $rootFolder = "${dest_root}${srcFile}/";
@@ -42,26 +42,25 @@ my $pkgList = "${rootFolder}PackageList.csv";
 
 
 if (!-e $srcList) {
-  print "find $src_root -name \"$srcFile\" > $srcList\n";
-  `find $src_root -name "$srcFile" > $srcList`;
-  print "result generated!\n";
+ 
+  #print "./gen_file_list.pl $srcFile $stat_root $srcList\n";
+  print `copy_files/gen_file_list.pl $srcFile $stat_root $srcList`;
+
+  #print "result generated!\n";
 }
 
-open my $listFh, "<$srcList";
+open my $listFh, "<$srcList" or die "Can't read file: $srcList!\n";
 open my $mapFh, ">$relationList";
 open my $pkgFh, ">$pkgList";
 
-my @files=<$listFh>;
+my @lines=<$listFh>;
 
 my $count=0;
 my $prevPkg="";
-foreach my $file (@files) {
+foreach my $line (@lines) {
+
+  (my$pkgName, my $file) = split(/;/, $line);
   chomp $file;  
-  
-  my $pkgName = $file;
-  $pkgName =~ s/$src_root//;
-  my $index = index($pkgName, '/');
-  $pkgName = substr($pkgName, 0, $index);
   
   my $newName = "";
   if ($pkgName eq $prevPkg) {
@@ -84,3 +83,5 @@ foreach my $file (@files) {
 close $listFh or die$!;
 close $$mapFh or die$!;
 close $$pkgFh or die$!;
+
+print "Files copied!\n";
