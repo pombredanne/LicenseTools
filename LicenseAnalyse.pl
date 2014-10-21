@@ -79,14 +79,27 @@ foreach my $file (@stat_files) {
 			last;
 		}
 
-		if (-d $copied_src.$src_name) {
+		my $illegal = index($src_name, '$');
+		$illegal += index($src_name, ' ');
+		if ((-d $copied_src.$src_name) ||($illegal != -2)){
 			print "Escaping [$src_name]\n";
 			next;
 		}
 
+
 		if (($src_name eq 'ArrayUtil.java') || 
 		($src_name eq 'DemoImpls.java') ||
 		($src_name eq 'glew.c') ||
+		($src_name eq 'glew.cpp') ||
+		($src_name eq 'soapC.cpp') ||
+		($src_name eq 'ogl_wrap.cpp') ||
+		($src_name eq 'grid_wrap.cpp') ||
+		($src_name eq 'aui_wrap.cpp') ||
+		($src_name eq '_windows_wrap.cpp') ||
+		($src_name eq '_misc_wrap.cpp') ||
+		($src_name eq '_gdi_wrap.cpp') ||
+		($src_name eq '_core_wrap.cpp') ||
+		($src_name eq '_controls_wrap.cpp') ||
 		($src_name eq 'glapi_gentable.c') ||
 		($src_name eq 'mapscript_wrap.c') ||
 		($src_name eq 'sqlite3.c') ) {
@@ -96,7 +109,7 @@ foreach my $file (@stat_files) {
 		$oldTime = localtime;
 		print "Copying files: [$src_name]\n";
 		#print "copy_files/copy.pl $src_name $src_root $copied_src\n";
-		print `copy_files/copy.pl $src_name $stat_root $copied_src`;
+		print `copy_files/copy.pl '$src_name' $stat_root $copied_src`;
 		$newTime = localtime;
 		$timeDiff = $newTime - $oldTime;
 		$copyTime += $timeDiff->seconds;
@@ -112,7 +125,7 @@ print "[$mday $hour:$min:$sec]";
 		$timeDiff = $newTime - $oldTime;
 		$groupTime += $timeDiff->seconds;
 
-		my @folders = `find ${copied_src}${src_name} -type d -name 'src_uniq_*'`;
+		my @folders = `find '${copied_src}${src_name}' -type d -name 'src_uniq_*'`;
 
 		my ($ext) = $src_name =~ /(\.[^.]+)$/;
 
