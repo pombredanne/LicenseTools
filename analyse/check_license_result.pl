@@ -36,61 +36,80 @@ my $rv = $sth->execute() or die $DBI::errstr;
 if($rv < 0){
    print $DBI::errstr;
 }
-my $hasNONE=0;
-my $Lic1='';
-my $Lic2=0;
 
-my $prevLicense = '';
-my $inconsis = 0;
+my $noneCount=0;
+my $oneCount=0;
+my $twoCount=0;
 
-my @row = $sth->fetchrow_array();
-chomp $row[0];
-$prevLicense = $row[0];
+my $familiesCount=0;
+my $gpl=0;
+my $bsd=0;
+my $apache=0;
 
-if ($row[0] eq "NONE") {
-	$hasNONE = 1;
-} else {
-	$Lic1 = $row[0];
-}
+my @otherFamilies=();
+
+my $inconsis=0;
+my $prevLic='';
 
 while(@row = $sth->fetchrow_array()) {
-chomp $row[0];
+	chomp $row[0];
+	my $current = $row[0];
 
-	if ($row[0] eq "NONE") {
-		$hasNONE = 1;
+	if ($prevLic!='' && $prevLic != $current) {
+		$inconsis = 1;
+	}
+
+	CountLicense($current);
+
+	if (MyContain($current, 'GPL')) {
+		$gpl++;
+	} elsif (MyContain($current, 'BSD')) {
+		$bsd++;
+	} elsif (MyContain($current, 'Apache')) {
+		$apache++;
 	} else {
-		if ($prevLicense ne $row[0]) {
-
-			if (!$Lic1) {
-				$Lic1 = $row[0];
-			} elsif ($row[0] ne $Lic1) {
-
-				$Lic2 = $row[0];
-
-				if ($hasNONE) {
-					# Now have NONE, L1, L2.
-					last;
-				}
-			}
+		if (! ($current ~~ @otherFamilies)) {
+			push(@otherFamilies, $current);
+			$familiesCount++;
 		}
 	}
-	$prevLicense = $row[0];
+
+	$prevLic = $current;
 }
 
-if (($hasNONE && !$Lic1 && !$Lic2) || (!$hasNONE && $Lic1 && !$Lic2) ) {
-	$inconsis = '';
-} elsif (!$hasNONE && $Lic1 && $Lic2) {
-	$inconsis = 'M';
-} elsif ($hasNONE && $Lic1 && !$Lic2) {
-	$inconsis = 'R';
-} elsif ($hasNONE && $Lic1 && $Lic2) {
-	$inconsis = 'A';
-} else {
-	$inconsis = 'UNKNOWN';
+if ($gpl > 0) {
+	$familiesCount++;
+}
+if ($bsd > 0) {
+	$familiesCount++;
+}
+if ($apache > 0) {
+	$familiesCount++;
 }
 
-print $inconsis;
+if (!$inconsis) {
+	print "$noneCount,$oneCount,$twoCount,$familiesCount,$gpl,$bsd,$apache";
+}
 
 $sth->finish();
 $dbh->disconnect();
 
+sub CountLicense {
+	my($lic) = @_;
+
+	if ($lic eq "NONE") {
+		$noneCount++;
+	} elsif(MyContain($lic, 'and')
+		|| MyContain($lic, 'or') ) {
+
+		$twoCount++;
+	} else {
+		$oneCount++;
+	}
+}
+
+sub MyContain {
+	my($str, $substr) = @_;
+
+	return index($str, $substr) != -1;
+}
