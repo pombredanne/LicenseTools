@@ -37,10 +37,6 @@ if($rv < 0){
    print $DBI::errstr;
 }
 
-my $noneCount=0;
-my $oneCount=0;
-my $twoCount=0;
-
 my $diffLicCount=0;
 my $familiesCount=0;
 my $gpl=0;
@@ -67,8 +63,6 @@ while(my @row = $sth->fetchrow_array()) {
 	if ($prevLic ne '' && $prevLic ne $current) {
 		$inconsis = 1;
 	}
-
-	CountLicense($current);
 
 	if (MyContain($current, 'GPL')) {
 		if (! ($current ~~ @gplF)) {
@@ -109,26 +103,15 @@ if ($apache > 0) {
 	$familiesCount++;
 }
 
+my $DEL='#';
+
 if ($inconsis) {
-	print "$fileCount,$diffLicCount,$familiesCount,$gpl,$bsd,$apache,$licStr";
+	print "$fileCount$DEL$diffLicCount$DEL$familiesCount$DEL$gpl$DEL$bsd$DEL$apache$DEL$licStr";
 }
 
 $sth->finish();
 $dbh->disconnect();
 
-sub CountLicense {
-	my($lic) = @_;
-
-	if ($lic eq "NONE") {
-		$noneCount++;
-	} elsif(MyContain($lic, 'and')
-		|| MyContain($lic, 'or') ) {
-
-		$twoCount++;
-	} else {
-		$oneCount++;
-	}
-}
 
 sub MyContain {
 	my($str, $substr) = @_;
