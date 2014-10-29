@@ -5,7 +5,7 @@ FileDelete, LicenseChanged_evaluated.csv
 
 itemCount=1
 
-Loop, read, LicenseChanged.csv, LicenseChanged_evaluated.csv
+Loop, read, LicenseChanged_sample.csv, LicenseChanged_evaluated.csv
 {
 	if (aborted)
 	{
@@ -21,8 +21,9 @@ Loop, read, LicenseChanged.csv, LicenseChanged_evaluated.csv
 
 	filename := Fields1
 	path := Fields2
-	if (Fields0 >= 3)
-		value := Fields3
+	type :=Fields3
+	if (Fields0 >= 4)
+		value := Fields4
 	else
 		value =
 
@@ -30,7 +31,7 @@ Loop, read, LicenseChanged.csv, LicenseChanged_evaluated.csv
 	{
 		SplitPath, filename, , , ext
 
-		pattern = ..\%path%\*.%ext%
+		pattern = ..\..\%path%\*.%ext%
 
 		;MsgBox %pattern%
 
@@ -47,7 +48,7 @@ Loop, read, LicenseChanged.csv, LicenseChanged_evaluated.csv
 			{
 				FileList = %first% %A_LoopFileFullPath%
 
-				Run, "D:\Portable\Beyond Compare 3\BCompare.exe" %FileList%
+				Run, "E:\Portable\Beyond Compare 3\BCompare.exe" %FileList%
 
 				MsgBox, 3, [%itemCount%] %filename% %count%, Is this FP? Cancel to compare more.
 
@@ -87,7 +88,7 @@ Loop, read, LicenseChanged.csv, LicenseChanged_evaluated.csv
 
 	}
 
-	FileAppend, %filename%`,%path%`,%value%`n
+	FileAppend, %filename%`,%path%`,%type%`,%value%`n
 	itemCount+=1
 }
 ExitApp

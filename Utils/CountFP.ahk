@@ -19,8 +19,8 @@ Loop, read, %fileName%
 	Fields=
 	StringSplit, Fields, A_LoopReadLine, `,
 
-	if (Fields0 >= 3)
-		value := Fields3
+	if (Fields0 >= 4)
+		value := Fields4
 	else
 		value =
 		
