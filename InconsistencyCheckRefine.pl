@@ -38,6 +38,8 @@ my $stmt = qq(CREATE TABLE IF NOT EXISTS INCONSIST
        (FILE_GROUP       TEXT    NOT NULL,
        FILE_NUM       INTEGER    NOT NULL,
        LICENSE_NUM       INTEGER    NOT NULL,
+       NONE_NUM       INTEGER    NOT NULL,
+       UNKNOWN_NUM       INTEGER    NOT NULL,
        FAMILY_NUM       INTEGER    NOT NULL,
        GPL_NUM       INTEGER    NOT NULL,
        BSD_NUM       INTEGER    NOT NULL,
@@ -49,7 +51,7 @@ if($rv < 0){
 }
 
 my $sth = $dbh->prepare('INSERT INTO INCONSIST (FILE_GROUP, FILE_NUM, 
-  LICENSE_NUM, FAMILY_NUM, GPL_NUM, BSD_NUM, APACHE_NUM, LICENSE_STRING) 
+  LICENSE_NUM, NONE_NUM, UNKNOWN_NUM, FAMILY_NUM, GPL_NUM, BSD_NUM, APACHE_NUM, LICENSE_STRING) 
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
 open my $licSrc, "<$licenseChange";
@@ -87,11 +89,11 @@ foreach my $folder (@folders) {
 		my $fileGroup="${src_name}_${group_num}";
 		#print $licFh "${fileGroup},$inconsis\n";
 
-		my ($fileNum, $licNum, $familyNum, $gplNum, $bsdNum, $apacheNum, $licStr) =split(/#/, $inconsis);
-		my @values=($fileGroup, $fileNum, $licNum, $familyNum, $gplNum, $bsdNum, $apacheNum, $licStr);
+		my ($fileNum, $licNum, $noneNum, $unknownNum, $familyNum, $gplNum, $bsdNum, $apacheNum, $licStr) =split(/#/, $inconsis);
+		my @values=($fileGroup, $fileNum, $licNum, $noneNum, $unknownNum, $familyNum, $gplNum, $bsdNum, $apacheNum, $licStr);
 		$sth->execute(@values);
 	
-		my $metrics="$fileGroup,$fileNum,$licNum,$familyNum,$gplNum,$bsdNum,$apacheNum,\"$licStr\"";
+		my $metrics="$fileGroup,$fileNum,$licNum,$noneNum,$unknownNum,$familyNum,$gplNum,$bsdNum,$apacheNum,\"$licStr\"";
 		print $licFh "$metrics\n";
 	}
 	else {

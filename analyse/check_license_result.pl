@@ -37,6 +37,8 @@ if($rv < 0){
    print $DBI::errstr;
 }
 
+my $noneCount=0;
+my $unknownCount=0;
 my $diffLicCount=0;
 my $familiesCount=0;
 my $gpl=0;
@@ -64,7 +66,11 @@ while(my @row = $sth->fetchrow_array()) {
 		$inconsis = 1;
 	}
 
-	if (MyContain($current, 'GPL')) {
+	if ($current eq 'NONE') {
+		$noneCount++;
+	} elsif ($current eq 'UNKNOWN') {
+		$unknownCount++;
+	} elsif (MyContain($current, 'GPL')) {
 		if (! ($current ~~ @gplF)) {
 			push(@gplF, $current);
 			$gpl++;
@@ -106,7 +112,15 @@ if ($apache > 0) {
 my $DEL='#';
 
 if ($inconsis) {
-	print "$fileCount$DEL$diffLicCount$DEL$familiesCount$DEL$gpl$DEL$bsd$DEL$apache$DEL$licStr";
+	print "$fileCount$DEL
+	$diffLicCount$DEL
+	$$noneCount$DEL
+	$$unknownCount$DEL
+	$familiesCount$DEL
+	$gpl$DEL
+	$bsd$DEL
+	$apache$DEL
+	$licStr";
 }
 
 $sth->finish();
