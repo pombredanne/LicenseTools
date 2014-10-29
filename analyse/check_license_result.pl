@@ -41,32 +41,50 @@ my $noneCount=0;
 my $oneCount=0;
 my $twoCount=0;
 
+my $diffLicCount=0;
 my $familiesCount=0;
 my $gpl=0;
 my $bsd=0;
 my $apache=0;
 
+my @gplF=();
+my @bsdF=();
+my @apacheF=();
+my @licType=();
 my @otherFamilies=();
 
 my $inconsis=0;
 my $prevLic='';
 
-while(@row = $sth->fetchrow_array()) {
+my $licStr='';
+
+my $fileCount=0;
+
+while(my @row = $sth->fetchrow_array()) {
 	chomp $row[0];
 	my $current = $row[0];
 
-	if ($prevLic!='' && $prevLic != $current) {
+	if ($prevLic ne '' && $prevLic ne $current) {
 		$inconsis = 1;
 	}
 
 	CountLicense($current);
 
 	if (MyContain($current, 'GPL')) {
-		$gpl++;
+		if (! ($current ~~ @gplF)) {
+			push(@gplF, $current);
+			$gpl++;
+		}
 	} elsif (MyContain($current, 'BSD')) {
-		$bsd++;
+		if (! ($current ~~ @bsdF)) {
+			push(@bsdF, $current);
+			$bsd++;
+		}
 	} elsif (MyContain($current, 'Apache')) {
-		$apache++;
+		if (! ($current ~~ @apacheF)) {
+			push(@apacheF, $current);
+			$apache++;
+		}
 	} else {
 		if (! ($current ~~ @otherFamilies)) {
 			push(@otherFamilies, $current);
@@ -75,7 +93,11 @@ while(@row = $sth->fetchrow_array()) {
 	}
 
 	$prevLic = $current;
+	$licStr = $licStr . $current . ';';
+	$fileCount++;
 }
+
+$diffLicCount=$gpl+$bsd+$apache+$familiesCount;
 
 if ($gpl > 0) {
 	$familiesCount++;
@@ -87,8 +109,8 @@ if ($apache > 0) {
 	$familiesCount++;
 }
 
-if (!$inconsis) {
-	print "$noneCount,$oneCount,$twoCount,$familiesCount,$gpl,$bsd,$apache";
+if ($inconsis) {
+	print "$fileCount,$diffLicCount,$familiesCount,$gpl,$bsd,$apache,$licStr";
 }
 
 $sth->finish();
