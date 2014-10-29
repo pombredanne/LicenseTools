@@ -37,26 +37,101 @@ if($rv < 0){
    print $DBI::errstr;
 }
 
-my $prevLicense = '';
-my $hasDiff = 0;
+my $noneCount=0;
+my $oneCount=0;
+my $twoCount=0;
 
-my @row = $sth->fetchrow_array();
-$prevLicense = $row[0];
+my $diffLicCount=0;
+my $familiesCount=0;
+my $gpl=0;
+my $bsd=0;
+my $apache=0;
 
-while(@row = $sth->fetchrow_array()) {
+my @gplF=();
+my @bsdF=();
+my @apacheF=();
+my @licType=();
+my @otherFamilies=();
 
-	if ($prevLicense ne $row[0]) {
-		$hasDiff = 1;
-		last;
+my $inconsis=0;
+my $prevLic='';
+
+my $licStr='';
+
+my $fileCount=0;
+
+while(my @row = $sth->fetchrow_array()) {
+	chomp $row[0];
+	my $current = $row[0];
+
+	if ($prevLic ne '' && $prevLic ne $current) {
+		$inconsis = 1;
 	}
-	$prevLicense = $row[0];
+
+	CountLicense($current);
+
+	if (MyContain($current, 'GPL')) {
+		if (! ($current ~~ @gplF)) {
+			push(@gplF, $current);
+			$gpl++;
+		}
+	} elsif (MyContain($current, 'BSD')) {
+		if (! ($current ~~ @bsdF)) {
+			push(@bsdF, $current);
+			$bsd++;
+		}
+	} elsif (MyContain($current, 'Apache')) {
+		if (! ($current ~~ @apacheF)) {
+			push(@apacheF, $current);
+			$apache++;
+		}
+	} else {
+		if (! ($current ~~ @otherFamilies)) {
+			push(@otherFamilies, $current);
+			$familiesCount++;
+		}
+	}
+
+	$prevLic = $current;
+	$licStr = $licStr . $current . ';';
+	$fileCount++;
+}
+
+$diffLicCount=$gpl+$bsd+$apache+$familiesCount;
+
+if ($gpl > 0) {
+	$familiesCount++;
+}
+if ($bsd > 0) {
+	$familiesCount++;
+}
+if ($apache > 0) {
+	$familiesCount++;
+}
+
+if ($inconsis) {
+	print "$fileCount,$diffLicCount,$familiesCount,$gpl,$bsd,$apache,$licStr";
 }
 
 $sth->finish();
-
 $dbh->disconnect();
-					  
-print $hasDiff;
 
+sub CountLicense {
+	my($lic) = @_;
 
+	if ($lic eq "NONE") {
+		$noneCount++;
+	} elsif(MyContain($lic, 'and')
+		|| MyContain($lic, 'or') ) {
 
+		$twoCount++;
+	} else {
+		$oneCount++;
+	}
+}
+
+sub MyContain {
+	my($str, $substr) = @_;
+
+	return index($str, $substr) != -1;
+}

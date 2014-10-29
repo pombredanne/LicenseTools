@@ -42,7 +42,7 @@ my $timeDiff;
 $oldTime = localtime;
 
 print "Listing files of folder: $src_root\n";
-print `collect_info/list_files.pl $src_root $stat_root`;
+#print `collect_info/list_files.pl $src_root $stat_root`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -52,7 +52,7 @@ print $log "Listing used: ". $timeDiff->seconds ." sec(s)\n";
 
 $oldTime = localtime;
 print "Counting files with these extensions: ${exts}\n";
-`collect_info/count.pl '$exts' $stat_root`;
+#`collect_info/count.pl '$exts' $stat_root`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -79,14 +79,43 @@ foreach my $file (@stat_files) {
 			last;
 		}
 
+		my $illegal = index($src_name, '$');
+		$illegal += index($src_name, ' ');
+		if ((-d $copied_src.$src_name) ||($illegal != -2)){
+			print "Escaping [$src_name]\n";
+			next;
+		}
+
+
+		if (($src_name eq 'ArrayUtil.java') || 
+		($src_name eq 'DemoImpls.java') ||
+		($src_name eq 'glew.c') ||
+		($src_name eq 'glew.cpp') ||
+		($src_name eq 'soapC.cpp') ||
+		($src_name eq 'ogl_wrap.cpp') ||
+		($src_name eq 'grid_wrap.cpp') ||
+		($src_name eq 'aui_wrap.cpp') ||
+		($src_name eq '_windows_wrap.cpp') ||
+		($src_name eq '_misc_wrap.cpp') ||
+		($src_name eq '_gdi_wrap.cpp') ||
+		($src_name eq '_core_wrap.cpp') ||
+		($src_name eq '_controls_wrap.cpp') ||
+		($src_name eq 'glapi_gentable.c') ||
+		($src_name eq 'mapscript_wrap.c') ||
+		($src_name eq 'sqlite3.c') ) {
+			next;
+		}
+
 		$oldTime = localtime;
 		print "Copying files: [$src_name]\n";
 		#print "copy_files/copy.pl $src_name $src_root $copied_src\n";
-		print `copy_files/copy.pl $src_name $src_root $copied_src`;
+		print `copy_files/copy.pl '$src_name' $stat_root $copied_src`;
 		$newTime = localtime;
 		$timeDiff = $newTime - $oldTime;
 		$copyTime += $timeDiff->seconds;
 		
+(my $sec,my $min,my $hour,my $mday) = localtime(time);
+print "[$mday $hour:$min:$sec]";
 
 		$oldTime = localtime;
 		print "Grouping...\n";
@@ -96,7 +125,7 @@ foreach my $file (@stat_files) {
 		$timeDiff = $newTime - $oldTime;
 		$groupTime += $timeDiff->seconds;
 
-		my @folders = `find ${copied_src}${src_name} -type d -name 'src_uniq_*'`;
+		my @folders = `find '${copied_src}${src_name}' -type d -name 'src_uniq_*'`;
 
 		my ($ext) = $src_name =~ /(\.[^.]+)$/;
 
@@ -105,7 +134,7 @@ foreach my $file (@stat_files) {
 			chomp $folder;
 
 			$oldTime = localtime;
-			 print "License detection: [$folder]\n";
+			 print "License detection: [$folder]";
 			`find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null`;
 			$newTime = localtime;
 			$timeDiff = $newTime - $oldTime;
@@ -113,17 +142,23 @@ foreach my $file (@stat_files) {
 
 			$oldTime = localtime;
 #			 print "analyse/check_license_result.pl -d $folder\n";
-			my $hasDiff = `analyse/check_license_result.pl -d $folder`;
+			my $inconsis = `analyse/check_license_result.pl -d $folder`;
 			$newTime = localtime;
 			$timeDiff = $newTime - $oldTime;
 			$changeDetectionTime += $timeDiff->seconds;
 
-			if ($hasDiff) {
-				# print "hasdiff: $hasDiff\n";
-				print $licFh "$src_name,$folder\n";
+			if ($inconsis) {
+				print " <-----Inconsistent!";
+				print $licFh "$src_name,$folder,$inconsis\n";
 			}
+			else {
+				print " OK.";
+			}
+			print "\n";
 		}
-
+		print "\n";
+		print $log "Copying:[$copyTime] Grouping:[$groupTime] Ninka:[$licenseDetectionTime] Incon:[$changeDetectionTime]\n";
+		
 	}
 
 	close($fh);
@@ -131,10 +166,7 @@ foreach my $file (@stat_files) {
 
 close $licFh;
 
-print $log "Copying used: ".$copyTime." sec(s)\n";
-print $log "Grouping used: ".$groupTime." sec(s)\n";
-print $log "License detection used: ".$licenseDetectionTime." sec(s)\n";
-print $log "License change detection used: ".$changeDetectionTime." sec(s)\n";
+#print $log "Copying:[$copyTime] Grouping:[$groupTime] Ninka:[$licenseDetectionTime] Incon:[$changeDetectionTime]\n";
 
 close $log;
 
