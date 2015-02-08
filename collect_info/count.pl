@@ -27,7 +27,7 @@ foreach my $ext (@exts)
 	my $stmt="";
 	if ($ext) {
 
-		if (substr($ext, 0) ne ".") {
+		if (substr($ext, 0, 1) ne ".") {
 			$ext = ".$ext";
 		}
 
