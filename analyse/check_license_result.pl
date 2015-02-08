@@ -70,7 +70,9 @@ while(my @row = $sth->fetchrow_array()) {
 		$noneCount++;
 	} elsif ($current eq 'UNKNOWN') {
 		$unknownCount++;
-	} elsif (MyContain($current, 'GPL')) {
+	}
+ 
+	if (MyContain($current, 'GPL')) {
 		if (! ($current ~~ @gplF)) {
 			push(@gplF, $current);
 			$gpl++;
@@ -112,15 +114,7 @@ if ($apache > 0) {
 my $DEL='#';
 
 if ($inconsis) {
-	print "$fileCount$DEL
-	$diffLicCount$DEL
-	$$noneCount$DEL
-	$$unknownCount$DEL
-	$familiesCount$DEL
-	$gpl$DEL
-	$bsd$DEL
-	$apache$DEL
-	$licStr";
+	print "$fileCount$DEL$diffLicCount$DEL$noneCount$DEL$unknownCount$DEL$familiesCount$DEL$gpl$DEL$bsd$DEL$apache$DEL$licStr";
 }
 
 $sth->finish();

@@ -52,7 +52,7 @@ if($rv < 0){
 
 my $sth = $dbh->prepare('INSERT INTO INCONSIST (FILE_GROUP, FILE_NUM, 
   LICENSE_NUM, NONE_NUM, UNKNOWN_NUM, FAMILY_NUM, GPL_NUM, BSD_NUM, APACHE_NUM, LICENSE_STRING) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
 open my $licSrc, "<$licenseChange";
 open my $licFh, ">$licenseChangeNew";
@@ -77,7 +77,7 @@ foreach my $folder (@folders) {
 
 	chomp $folder;
 
-	$folder =~ /$copied_src(.*?)\/src_uniq_(\d)/;
+	$folder =~ /$copied_src(.*?)\/src_uniq_(\d+)/;
 	my $src_name = $1;
 	my $group_num = $2;
 
