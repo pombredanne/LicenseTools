@@ -6,11 +6,9 @@ use List::MoreUtils 'first_index';
 use strict;
 
 
-my $src_root = @ARGV[0];
-my $stat_root = @ARGV[1];
-my $ext = @ARGV[2];
-# my $startPkgName = @ARGV[0];
-
+my $src_root = $ARGV[0];
+my $stat_root = $ARGV[1];
+my $ext = $ARGV[2];
 
 my $database = "${stat_root}files.db";
 

@@ -33,6 +33,7 @@ if (!-d $copied_src) {
  
 open my $licFh, ">$licenseChange";
 
+my $ext = 'java';
 
 my $oldTime;
 my $newTime;
@@ -42,127 +43,71 @@ my $timeDiff;
 $oldTime = localtime;
 
 print "Listing files of folder: $src_root\n";
-#print `collect_info/list_files.pl $src_root $stat_root`;
+#print `collect_info/list_files.pl $src_root $stat_root $ext`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
 print $log "Listing used: ". $timeDiff->seconds ." sec(s)\n";
 
 
-
 $oldTime = localtime;
-print "Counting files with these extensions: ${exts}\n";
-#`collect_info/count.pl '$exts' $stat_root`;
+
+print "Generating hash values for token files...\n";
+print `collect_info/gen_hash.pl $stat_root $ext`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
-print $log "Counting used: ". $timeDiff->seconds ." sec(s)\n";
+print $log "Generating Hash used: ". $timeDiff->seconds ." sec(s)\n";
 
 
-my $copyTime=0;
-my $groupTime=0;
-my $licenseDetectionTime=0;
-my $changeDetectionTime=0;
 
-my @stat_files = `find $stat_root -type f -name 'statistics.*.txt'`;
+$oldTime = localtime;
 
-foreach my $file (@stat_files) {
+print "Copying files...\n";
+my $dest_dir = $copied_src.$ext;
+print `copy_files/copy_files.pl $dest_dir $stat_root $ext`;
 
-	open(my $fh, "<$file");
-
-	while (<$fh>) {
-
-		(my $src_name, my $num) = split(/;/, $_);
-		chomp $num;
-
-		if ($num < $threshold) {
-			last;
-		}
-
-		my $illegal = index($src_name, '$');
-		$illegal += index($src_name, ' ');
-		if ((-d $copied_src.$src_name) ||($illegal != -2)){
-			print "Escaping [$src_name]\n";
-			next;
-		}
+$newTime = localtime;
+$timeDiff = $newTime - $oldTime;
+print $log "Copying used: ". $timeDiff->seconds ." sec(s)\n";
 
 
-		if (($src_name eq 'ArrayUtil.java') || 
-		($src_name eq 'DemoImpls.java') ||
-		($src_name eq 'glew.c') ||
-		($src_name eq 'glew.cpp') ||
-		($src_name eq 'soapC.cpp') ||
-		($src_name eq 'ogl_wrap.cpp') ||
-		($src_name eq 'grid_wrap.cpp') ||
-		($src_name eq 'aui_wrap.cpp') ||
-		($src_name eq '_windows_wrap.cpp') ||
-		($src_name eq '_misc_wrap.cpp') ||
-		($src_name eq '_gdi_wrap.cpp') ||
-		($src_name eq '_core_wrap.cpp') ||
-		($src_name eq '_controls_wrap.cpp') ||
-		($src_name eq 'glapi_gentable.c') ||
-		($src_name eq 'mapscript_wrap.c') ||
-		($src_name eq 'sqlite3.c') ) {
-			next;
-		}
+my @folders = `find $dest_dir -mindepth 1 -maxdepth 1 -type d`;
 
-		$oldTime = localtime;
-		print "Copying files: [$src_name]\n";
-		#print "copy_files/copy.pl $src_name $src_root $copied_src\n";
-		print `copy_files/copy.pl '$src_name' $stat_root $copied_src`;
-		$newTime = localtime;
-		$timeDiff = $newTime - $oldTime;
-		$copyTime += $timeDiff->seconds;
-		
-(my $sec,my $min,my $hour,my $mday) = localtime(time);
-print "[$mday $hour:$min:$sec]";
+foreach my $folder (@folders) {
 
-		$oldTime = localtime;
-		print "Grouping...\n";
-		# print "copy_files/get_uniq.pl ${copied_src} ${src_name}\n";
-		print `copy_files/get_uniq.pl ${copied_src} ${src_name}`;
-		$newTime = localtime;
-		$timeDiff = $newTime - $oldTime;
-		$groupTime += $timeDiff->seconds;
+	chomp $folder;
 
-		my @folders = `find '${copied_src}${src_name}' -type d -name 'src_uniq_*'`;
+	$oldTime = localtime;
+	 print "License detection: [$folder]";
+	`find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null`;
+	$newTime = localtime;
+	$timeDiff = $newTime - $oldTime;
+	$licenseDetectionTime += $timeDiff->seconds;
 
-		my ($ext) = $src_name =~ /(\.[^.]+)$/;
-
-		foreach my $folder (@folders) {
-
-			chomp $folder;
-
-			$oldTime = localtime;
-			 print "License detection: [$folder]";
-			`find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null`;
-			$newTime = localtime;
-			$timeDiff = $newTime - $oldTime;
-			$licenseDetectionTime += $timeDiff->seconds;
-
-			$oldTime = localtime;
+	$oldTime = localtime;
 #			 print "analyse/check_license_result.pl -d $folder\n";
-			my $inconsis = `analyse/check_license_result.pl -d $folder`;
-			$newTime = localtime;
-			$timeDiff = $newTime - $oldTime;
-			$changeDetectionTime += $timeDiff->seconds;
+	my $inconsis = `analyse/check_license_result.pl -d $folder`;
+	$newTime = localtime;
+	$timeDiff = $newTime - $oldTime;
+	$changeDetectionTime += $timeDiff->seconds;
 
-			if ($inconsis) {
-				print " <-----Inconsistent!";
-				print $licFh "$src_name,$folder,$inconsis\n";
-			}
-			else {
-				print " OK.";
-			}
-			print "\n";
-		}
-		print "\n";
-		print $log "Copying:[$copyTime] Grouping:[$groupTime] Ninka:[$licenseDetectionTime] Incon:[$changeDetectionTime]\n";
-		
+	if ($inconsis) {
+		print " <-----Inconsistent!";
+
+		my ($fileNum, $licNum, $noneNum, $unknownNum, $familyNum, $gplNum, $bsdNum, $apacheNum, $licStr) =split(/#/, $inconsis);	
+		my $metrics="$folder,$fileNum,$licNum,$noneNum,$unknownNum,$familyNum,$gplNum,$bsdNum,$apacheNum,\"$licStr\"";
+		print $licFh "$metrics\n";
 	}
-
-	close($fh);
+	else {
+		print " OK.";
+	}
+	print "\n";
 }
+
+print "\n";
+print $log "Ninka:[$licenseDetectionTime] Incon:[$changeDetectionTime]\n";
+
 
 close $licFh;
 
