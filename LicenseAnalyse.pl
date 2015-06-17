@@ -43,7 +43,7 @@ my $timeDiff;
 $oldTime = localtime;
 
 print "Listing files of folder: $src_root\n";
-#print `collect_info/list_files.pl $src_root $stat_root $ext`;
+print `collect_info/list_files.pl $src_root $stat_root $ext`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -71,6 +71,8 @@ $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
 print $log "Copying used: ". $timeDiff->seconds ." sec(s)\n";
 
+my $licenseDetectionTime = 0;
+my $changeDetectionTime = 0;
 
 my @folders = `find $dest_dir -mindepth 1 -maxdepth 1 -type d`;
 

@@ -36,9 +36,9 @@ my $sth = $dbh->prepare('INSERT INTO FILE (PATH) VALUES (?)');
 
 print "Making .$ext file list...\n";
 
-my @files=`find $src_root -name '*.$ext' -type f`;
+my $startTime=time();
 
- my $startTime=time();
+my @files=`find $src_root -name '*.$ext' -type f`;
 foreach my $file (@files) {
 
   chomp $file;
