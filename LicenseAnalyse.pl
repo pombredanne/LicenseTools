@@ -65,6 +65,7 @@ $oldTime = localtime;
 
 print "Copying files...\n";
 my $dest_dir = $copied_src.$ext;
+#print "copy_files/copy_files.pl $dest_dir $stat_root $ext";
 print `copy_files/copy_files.pl $dest_dir $stat_root $ext`;
 
 $newTime = localtime;

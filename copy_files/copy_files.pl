@@ -11,11 +11,11 @@ use DBI;
 
 my $dest_root = $ARGV[0];
 my $stat_root = $ARGV[1];
-my $ext = $ARGV[1];
+my $ext = $ARGV[2];
 
 my $rootFolder = "${dest_root}/";
 if (!-d $rootFolder) {
- # print "$rootFolder not exist!\n";
+#  print "$rootFolder not exist!\n";
  make_path($rootFolder);
 }
 
@@ -44,18 +44,23 @@ while(my @row = $sth->fetchrow_array()) {
  my $hash_value = $row[0];
  my $count = $row[1];
 
- if ($count > 1) {
+# print "Hash:[$hash_value] Count:[$count]\n";
+
+ if ($count > 1 && $hash_value) {
+#	print "$hash_value inserted.\n";
  	push @hash_list, $hash_value;
  }
 }
 
+
 my $group_count=1;
+my $total_files=0;
 foreach my $hash (@hash_list) {
 
-	my $stmt = qq(select PATH from FILE where HASH = $hash;);
+	my $stmt = qq(select PATH from FILE where HASH = ?;);
 
 	my $sth = $dbh->prepare( $stmt );
-	my $rv = $sth->execute() or die $DBI::errstr;
+	my $rv = $sth->execute($hash) or die $DBI::errstr;
 	if($rv < 0){
 	   print $DBI::errstr;
 	}
@@ -68,7 +73,7 @@ foreach my $hash (@hash_list) {
 	}
 
 	# Create a mapping file
-	my $mapping_list = "${groupFolder}$mapping.txt";
+	my $mapping_list = "${groupFolder}mapping.txt";
 	open my $mapFh, ">$mapping_list";
 
 	my $file_count=1;
@@ -79,12 +84,13 @@ foreach my $hash (@hash_list) {
 		(my $name, my $path, my $suffix) = fileparse($fileName,qr/\.[^.]*/);
 		my $newName = "${file_count}_${name}${suffix}";
 
-		print $mapFh, "$newName,$fileName";
+		print $mapFh "$newName,$fileName\n";
 
 		my $newFullName = $groupFolder.$newName;
 		copy($fileName, $newFullName);
 
 		$file_count++;
+		$total_files++;
 	}
 
 	close $mapFh;
@@ -92,5 +98,6 @@ foreach my $hash (@hash_list) {
 }
 
 
+print "${total_files} files copied.\n";
 
 $dbh->disconnect();

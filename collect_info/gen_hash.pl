@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 #use Getopt::Std;
+use Digest::SHA;
 use File::Basename;
 use DBI;
 use strict;
@@ -62,9 +63,17 @@ while(my @row = $sth->fetchrow_array()) {
 
  if (!$hash) {
 
-	`$ccfx_path D ${ccfx_type} $filepath`; # Generate the prep file
 	my $token_file = "${filepath}${ccfx_suffix}";
-	`perl -i -pe 's/^[^\t]+\t//' ${token_file}`; # Remove leading line numbers of the token file
+
+ 	unless (-e $token_file) {
+		`$ccfx_path D ${ccfx_type} $filepath`; # Generate the prep file
+		`perl -i -pe 's/^[^\t]+\t//' ${token_file}`; # Remove leading line numbers of the token file
+ 	}
+
+	my $lines = `wc -l < $token_file`;
+	if ($lines < 20) {
+		next;
+	}
 
 	my $fh;
 	unless (open $fh, $token_file) {
@@ -72,10 +81,10 @@ while(my @row = $sth->fetchrow_array()) {
 		next;
 	}
 
-	my $sha1 = Digest::SHA1->new;
+	my $sha1 = Digest::SHA->new;
 	$sha1->addfile($fh);
 	my $hash_value = $sha1->hexdigest; # Get the hash of the file
-	print $hash_value, "  $filepath\n";
+#	print $hash_value, "  $filepath\n";
 
 	$dbh->do('UPDATE FILE SET HASH = ? WHERE PATH = ?', undef, $hash_value, $filepath);
 
