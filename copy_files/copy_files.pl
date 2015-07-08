@@ -5,8 +5,9 @@ use Getopt::Std;
 use File::Basename;
 use File::Copy;
 use File::Path qw(make_path);
-use DBI;
-
+use Time::Seconds;
+use Time::Piece;
+use List::MoreUtils qw(firstidx);
 
 
 my $dest_root = $ARGV[0];
@@ -19,85 +20,111 @@ if (!-d $rootFolder) {
  make_path($rootFolder);
 }
 
-my $database = "${stat_root}files.db";
-
-my $driver   = "SQLite"; 
-my $dsn = "DBI:$driver:dbname=$database";
-my $userid = "";
-my $password = "";
-my $dbh = DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) or die $DBI::errstr;
+my $hashFile="${stat_root}hash_map.txt";
+my $sortedFile="${stat_root}hash_map_sorted.txt";
 
 
+#print "Merge tables...\n";
 
-my $stmt = qq(select HASH, count(*) from FILE group by HASH order by count(*) desc;);
+#`cat ${stat_root}hash_table*.txt > $hashFile`;
 
-my $sth = $dbh->prepare( $stmt );
-my $rv = $sth->execute() or die $DBI::errstr;
-if($rv < 0){
-   print $DBI::errstr;
+#print "Sort table...\n";
+
+#`grep -Ev '^,' $hashFile | sort > $sortedFile`; # Sort the hash table
+
+print "Get rank...\n";
+
+my @rankings = `cat  $sortedFile | cut -d ',' -f 1 | sort | uniq -c | sort -nr`;
+
+
+my @topHash;
+my $count = 0;
+my $totalFile=0;
+foreach my $sha (@rankings) {
+
+	$sha =~ s/^\s+|\s+$//g;
+	
+#	print "[$sha]\n";
+	
+	(my $number, my $hash) = split(/ /, $sha);
+	
+	if ($number >= 2) {
+		$totalFile += $number;
+		push(@topHash, $hash);
+	} else {
+		last;
+	}
+	$count++;
 }
 
-my @hash_list;
 
-while(my @row = $sth->fetchrow_array()) {
+open my $handle, '<', $sortedFile;
+chomp(my @lines = <$handle>);
+close $handle;
 
- my $hash_value = $row[0];
- my $count = $row[1];
+my $prevHash = "";
+my $currentFile=1;
+my $group_count=-1;
+my $file_index=0;
+my $mapFh;
 
-# print "Hash:[$hash_value] Count:[$count]\n";
+foreach my $line (@lines) {
 
- if ($count > 1 && $hash_value) {
-#	print "$hash_value inserted.\n";
- 	push @hash_list, $hash_value;
- }
-}
+	(my $hash, my $fileName)=split(/,/, $line);
+	
+	my $idx = firstidx { $_ eq $hash } @topHash;
+	
+	if ($idx >= 0) {
+
+		my $process=100*$currentFile/$totalFile;
+		my $r=sprintf("%.1f",$process);
+		print "[${r}%] Done. [${currentFile}/${totalFile}].\r";
 
 
-my $group_count=1;
-my $total_files=0;
-foreach my $hash (@hash_list) {
+		if ($hash ne $prevHash) {
+			$group_count++;
+			$file_index=0;
 
-	my $stmt = qq(select PATH from FILE where HASH = ?;);
+			if ($mapFh) {
+				close $mapFh;
+				undef $mapFh;
+			}
 
-	my $sth = $dbh->prepare( $stmt );
-	my $rv = $sth->execute($hash) or die $DBI::errstr;
-	if($rv < 0){
-	   print $DBI::errstr;
-	}
+			$prevHash = $hash;
+		}
 
-	# Make dir for group
-	my $groupFolder = "${rootFolder}${group_count}/";
-	if (!-d $groupFolder) {
-	 # print "$groupFolder not exist!\n";
-	 make_path($groupFolder);
-	}
 
-	# Create a mapping file
-	my $mapping_list = "${groupFolder}mapping.txt";
-	open my $mapFh, ">$mapping_list";
+		# Make dir for group
+		my $groupFolder = "${rootFolder}${group_count}/";
+		if (!-d $groupFolder) {
+		 # print "$groupFolder not exist!\n";
+		 make_path($groupFolder);
+		}
 
-	my $file_count=1;
-	while(my @row = $sth->fetchrow_array()) {
- 		my $fileName = $row[0];
-		# Copy files
+		if (!$mapFh) {			
+			# Create a mapping file
+			my $mapping_list = "${groupFolder}mapping.txt";
+			open $mapFh, ">>$mapping_list";
+		}
 
+		# Generate new file name
 		(my $name, my $path, my $suffix) = fileparse($fileName,qr/\.[^.]*/);
-		my $newName = "${file_count}_${name}${suffix}";
+		my $newName = "${file_index}_${name}${suffix}";
 
 		print $mapFh "$newName,$fileName\n";
 
 		my $newFullName = $groupFolder.$newName;
 		copy($fileName, $newFullName);
 
-		$file_count++;
-		$total_files++;
+		$file_index++;
+		$currentFile++;	
 	}
 
+}
+
+if ($mapFh) {
 	close $mapFh;
-	$group_count++;
+	undef $mapFh;
 }
 
 
-print "${total_files} files copied.\n";
-
-$dbh->disconnect();
