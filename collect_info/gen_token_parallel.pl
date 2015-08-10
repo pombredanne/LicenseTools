@@ -51,7 +51,7 @@ my $lines = `wc -l < $fn`;
 chomp($lines);
 
 my @skipList;
-chomp(@skipList=`cat $skipFn`) if (-e $skipFn);
+chomp(@skipList=`cat '$skipFn'`) if (-e $skipFn);
 
 my $ccfx_path = '/usr/local/ccfx/ubuntu32/ccfx';
 
@@ -73,7 +73,7 @@ while(<FILE>) {
 
 	chomp;
 	my $filepath = $_;
-	$filepath =~s/ /\\ /g; # Escape the spaces.
+	#$filepath =~s/ /\\ /g; # Escape the spaces.
 
 	if ($filepath ~~ @skipList) {
 		$count++;
@@ -114,13 +114,13 @@ while(<FILE>) {
       alarm $time;
 
       #print "$ccfx_path D ${ccfx_type} $filepath\n"; # Generate the prep file
-      `$ccfx_path D ${ccfx_type} $filepath`; # Generate the prep file
+      `$ccfx_path D ${ccfx_type} '$filepath'`; # Generate the prep file
 
       alarm 0;
     };
 
     if ($@ ne "timeout\n") {
-      `touch $ccfxfails`;
+      `touch '$ccfxfails'`;
     }
 
     $pm->finish; # Terminates the child process
@@ -129,7 +129,7 @@ while(<FILE>) {
   $pm->wait_all_children;
 
   if (-e $token_file) {
-    `perl -i -pe 's/^[^\t]+\t//' ${token_file}`; # Remove leading line numbers of the token file
+    `perl -i -pe 's/^[^\t]+\t//' '${token_file}'`; # Remove leading line numbers of the token file
   } elsif (-e $ccfxfails) {
     `echo '$filepath' >> $skipFn`;
   } else {
