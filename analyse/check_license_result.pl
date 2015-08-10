@@ -22,8 +22,13 @@ if (substr($dbPath,-1) ne "/") {
 	$dbPath = $dbPath.'/';
 }
 
-my $driver   = "SQLite";
 my $database = "${dbPath}result.db";
+
+unless (-e $database) {
+	exit 1;
+}
+
+my $driver   = "SQLite";
 my $dsn = "DBI:$driver:dbname=$database";
 my $userid = "";
 my $password = "";

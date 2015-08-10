@@ -7,15 +7,18 @@ use DBI;
 use strict;
 
 
-my $stat_root = 'AnalysisData/Statistics/';
-my $section = $ARGV[0];
-my $start_from= $ARGV[1];
+
+my $stat_root = $ARGV[0];
+my $section = $ARGV[1];
+my $ext = $ARGV[2];
+my $start_from= $ARGV[3];
+
 
 if (!$start_from) {
  $start_from = 1;
 }
 
-my $ext = 'java';
+#my $ext = 'java';
 
 # print "[$ext]\n";
 my $ccfx_type = '';
@@ -47,10 +50,13 @@ my $lines = `wc -l < $fn`;
 
 chomp($lines);
 
-my $ccfx_path = '/usr/local/ccfx/ubuntu32/ccfx';
 
 open(FILE, "<$fn") || die;
 open(my $rh,">>$rf") || die;
+
+open(my $log, ">${stat_root}log_$section.txt");
+
+print "Generating hash values for section $section...\n";
 
 my $count=1;
 while(<FILE>) {
@@ -72,6 +78,8 @@ while(<FILE>) {
 	my $r=sprintf("%.1f",$process);
 	print "[${r}%] Done. [${count}/${lines}].";
 
+	seek($log,0,0);
+	print $log "[${r}%] Done. [${count}/${lines}].\n";
 
 	my $hash_value="";
 	if (-e $token_file) {
@@ -85,6 +93,8 @@ while(<FILE>) {
 			$sha1->addfile($fh);
 			$hash_value = $sha1->hexdigest; # Get the hash of the file
 			close $fh;
+		} else {
+			# TODO: record the line count of token file
 		}
 	}
 
@@ -96,5 +106,6 @@ while(<FILE>) {
 
 close(FILE);
 close($rh);
+close($log);
 
 print "\nComplete.\n";

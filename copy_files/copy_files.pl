@@ -14,7 +14,7 @@ my $dest_root = $ARGV[0];
 my $stat_root = $ARGV[1];
 my $ext = $ARGV[2];
 
-my $rootFolder = "${dest_root}/";
+my $rootFolder = ${dest_root};
 if (!-d $rootFolder) {
 #  print "$rootFolder not exist!\n";
  make_path($rootFolder);
@@ -23,14 +23,16 @@ if (!-d $rootFolder) {
 my $hashFile="${stat_root}hash_map.txt";
 my $sortedFile="${stat_root}hash_map_sorted.txt";
 
+if (!-e $hashFile) {
 
-#print "Merge tables...\n";
+  print "Merge tables...\n";
+  `cat ${stat_root}hash_table*.txt > $hashFile`;
+}
 
-#`cat ${stat_root}hash_table*.txt > $hashFile`;
-
-#print "Sort table...\n";
-
-#`grep -Ev '^,' $hashFile | sort > $sortedFile`; # Sort the hash table
+if (!-e $sortedFile) {
+  print "Sort table...\n";
+  `grep -Ev '^,' $hashFile | sort > $sortedFile`; # Sort the hash table
+}
 
 print "Get rank...\n";
 

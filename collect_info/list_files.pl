@@ -10,7 +10,7 @@ my $src_root = $ARGV[0];
 my $stat_root = $ARGV[1];
 my $ext = $ARGV[2];
 
-my $database = "${stat_root}files.db";
+my $database = "${stat_root}files.$ext.db";
 
 if (-e $database) {
   exit 0;
@@ -39,6 +39,8 @@ print "Making .$ext file list...\n";
 my $startTime=time();
 
 my @files=`find $src_root -name '*.$ext' -type f`;
+
+my $count = 0;
 foreach my $file (@files) {
 
   chomp $file;
@@ -46,6 +48,9 @@ foreach my $file (@files) {
   # print "Inserting ($file)\n";
   my @values=($file);
   $sth->execute(@values);
+
+print "$count\n";
+$count++;
 
 }
  $dbh->commit;

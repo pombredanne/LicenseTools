@@ -33,7 +33,7 @@ my $changeDetectionTime=0;
 my @folders;
 
 if (!-e $family_folder_list) {
-	@folders = `find ${copied_src} -type d -name 'src_uniq_*'`;
+	@folders = `find ${copied_src} -mindepth 1 -maxdepth 1 -type d`;
 	open(my $fh, '>', $family_folder_list);
 	foreach my $folder (@folders) {
 		print $fh $folder;
@@ -46,25 +46,32 @@ if (!-e $family_folder_list) {
 	close $fh;
 }
 
+chomp @folders;
+my $total=@folders;
+my $count=0;
+
 $oldTime = localtime;
 foreach my $folder (@folders) {
 
-	chomp $folder;
 
-	$folder =~ /$copied_src(.*?)\/src_uniq_/;
-	my $src_name = $1;
+	$folder =~ /$copied_src(.*?)$/;
+	my $group_name = $1;
 
-    print "Check inconsistency for: [$folder]";
+	my $process = 100*$count/$total;
+	my $r = sprintf("%.1f",$process);
+	print "[$r%] Done. Check inconsistency for: [$count/$total]";
+
 	my $inconsis = `analyse/check_license_result.pl -d $folder`;
 
 	if ($inconsis) {
 		print " <-----Inconsis:[$inconsis]";
-		print $licFh "$src_name,$folder,$inconsis\n";
+		print $licFh "$group_name,$folder,$inconsis\n";
 	}
 	else {
 		print " OK.";
 	}
 	print "\n";
+	$count++;
 }
 
 $newTime = localtime;
@@ -76,4 +83,5 @@ print $log "Incon:[$changeDetectionTime]\n";
 close $licFh;
 
 close $log;
+
 
