@@ -44,17 +44,23 @@ if ($ccfx_type eq 'cpp')  {
 } else {
 }
 
+open(my $log, ">${stat_root}log_$section.txt");
+
 my $fn="${stat_root}file_list$section.txt";
 my $rf="${stat_root}hash_table$section.txt";
-my $lines = `wc -l < $fn`;
+my $old_rf="${stat_root}hash_table$section.txt.bk";
+chomp(my $lines = `wc -l < $fn`);
 
-chomp($lines);
+my $rlines=0;
+chomp($rlines = `wc -l < $rf`) if (-e $rf);
 
+if ($rlines<$lines) {
 
-open(FILE, "<$fn") || die;
+$start_from=$rlines+1;
+
+open(FILE, "<$fn") || die "Can't open $fn\n";
 open(my $rh,">>$rf") || die;
 
-open(my $log, ">${stat_root}log_$section.txt");
 
 print "Generating hash values for section $section...\n";
 
@@ -68,37 +74,13 @@ while(<FILE>) {
 
 	chomp;
 	my $filepath = $_;
-	$filepath =~s/ /\\ /g; # Escape the spaces.
+	#$filepath =~s/ /\\ /g; # Escape the spaces.
 
-	my $token_file = "${filepath}${ccfx_suffix}";
+	PrintLog($count,$lines);
 
-#print "Token file:[$token_file]\n";
+	(my $hash_value, my $lc) = CalcHash();
 
-	my $process=100*$count/$lines; 
-	my $r=sprintf("%.1f",$process);
-	print "[${r}%] Done. [${count}/${lines}].";
-
-	seek($log,0,0);
-	print $log "[${r}%] Done. [${count}/${lines}].\n";
-
-	my $hash_value="";
-	if (-e $token_file) {
-		my $lines = `wc -l < $token_file`;
-		if ($lines >= 20) {
-
-			print "Processing...";
-
-			open(my $fh, $token_file);
-			my $sha1 = Digest::SHA->new;
-			$sha1->addfile($fh);
-			$hash_value = $sha1->hexdigest; # Get the hash of the file
-			close $fh;
-		} else {
-			# TODO: record the line count of token file
-		}
-	}
-
-	print $rh "${hash_value},${filepath}\n";
+	print $rh "${hash_value},${filepath},$lc\n";
 
 	print "              \r";
 	$count++;
@@ -106,6 +88,71 @@ while(<FILE>) {
 
 close(FILE);
 close($rh);
-close($log);
 
+} else {
+
+rename $rf, $old_rf;
+
+open(FILE, "<$old_rf") || die "Can't open $old_rf\n";
+open(my $rh,">$rf") || die;
+
+
+print "Updating hash values for section $section...\n";
+
+my $count=1;
+while(<FILE>) {
+
+	chomp;
+	(my $hash_value, my $filepath, my $lc) = split(/,/);
+	#$filepath =~s/ /\\ /g; # Escape the spaces.
+
+	PrintLog($count,$rlines);
+
+	($hash_value, $lc) = CalcHash($hash_value, $lc);
+
+	print $rh "${hash_value},${filepath},$lc\n";
+
+	print "              \r";
+	$count++;
+}
+
+close(FILE);
+close($rh);
+
+}
+
+close($log);
 print "\nComplete.\n";
+
+sub PrintLog {
+
+	(my $count, my $lines) = split(@_);
+	my $process=100*$count/$lines; 
+	my $r=sprintf("%.1f",$process);
+	print "[${r}%] Done. [${count}/${lines}].";
+
+	seek($log,0,0);
+	print $log "[${r}%] Done. [${count}/${lines}].\n";
+}
+
+sub CalcHash {
+
+	(my $hash_value, my $lc) = split(@_);
+	
+	my $token_file = "${filepath}${ccfx_suffix}";
+	if (-e $token_file) {
+		print "Processing...";
+
+		$lc = `wc -l < '$token_file'` if (!$lc);
+
+		if (!$hash_value) {
+			open(my $fh, $token_file);
+			my $sha1 = Digest::SHA->new;
+			$sha1->addfile($fh);
+			$hash_value = $sha1->hexdigest; # Get the hash of the file
+			close $fh;
+		}
+	}
+
+	return ($hash_value,$lc);
+}
