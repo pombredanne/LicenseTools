@@ -78,7 +78,7 @@ while(<FILE>) {
 
 	PrintLog($count,$lines);
 
-	(my $hash_value, my $lc) = CalcHash();
+	(my $hash_value, my $lc) = CalcHash($filepath);
 
 	print $rh "${hash_value},${filepath},$lc\n";
 
@@ -96,7 +96,6 @@ rename $rf, $old_rf;
 open(FILE, "<$old_rf") || die "Can't open $old_rf\n";
 open(my $rh,">$rf") || die;
 
-
 print "Updating hash values for section $section...\n";
 
 my $count=1;
@@ -108,7 +107,7 @@ while(<FILE>) {
 
 	PrintLog($count,$rlines);
 
-	($hash_value, $lc) = CalcHash($hash_value, $lc);
+	($hash_value, $lc) = CalcHash($filepath, $hash_value, $lc);
 
 	print $rh "${hash_value},${filepath},$lc\n";
 
@@ -126,24 +125,29 @@ print "\nComplete.\n";
 
 sub PrintLog {
 
-	(my $count, my $lines) = split(@_);
-	my $process=100*$count/$lines; 
+	my ($count, $total) = @_;
+
+	if ($total==0) {
+		return;
+	}
+
+	my $process=100*$count/$total; 
 	my $r=sprintf("%.1f",$process);
-	print "[${r}%] Done. [${count}/${lines}].";
+	print "[${r}%] Done. [${count}/${total}].";
 
 	seek($log,0,0);
-	print $log "[${r}%] Done. [${count}/${lines}].\n";
+	print $log "[${r}%] Done. [${count}/${total}].\n";
 }
 
 sub CalcHash {
 
-	(my $hash_value, my $lc) = split(@_);
+	my ($filepath, $hash_value, $lc) = @_;
 	
 	my $token_file = "${filepath}${ccfx_suffix}";
 	if (-e $token_file) {
 		print "Processing...";
 
-		$lc = `wc -l < '$token_file'` if (!$lc);
+		chomp($lc = `wc -l < '$token_file'`) if (!$lc);
 
 		if (!$hash_value) {
 			open(my $fh, $token_file);
