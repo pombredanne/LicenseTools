@@ -52,6 +52,8 @@ chomp($lines);
 
 my @skipList;
 chomp(@skipList=`cat '$skipFn'`) if (-e $skipFn);
+chomp(@skipList2=`cat '$failFn' |sort| uniq`) if (-e $failFn);
+push(@skipList,@skipList2);
 
 my $ccfx_path = '/usr/local/ccfx/ubuntu32/ccfx';
 
