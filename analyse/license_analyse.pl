@@ -30,7 +30,7 @@ for (my $i = 0; $i < $group_count; $i++) {
     if (-d $folder) {
 
 #	    print "find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null\n";
-	    `find $folder -name '*$ext' | xargs NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null`;
+	    `find $folder -name '*$ext' -print0 | xargs -0 NinkaWrapper.pl -s -x -o $folder -- 2>/dev/null`;
     }
 
     $pm->finish; # Terminates the child process
