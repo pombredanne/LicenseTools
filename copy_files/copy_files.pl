@@ -13,6 +13,7 @@ use List::MoreUtils qw(firstidx);
 my $dest_root = $ARGV[0];
 my $stat_root = $ARGV[1];
 my $ext = $ARGV[2];
+my $threshold = $ARGV[3];
 
 my $rootFolder = ${dest_root};
 if (!-d $rootFolder) {
@@ -21,7 +22,8 @@ if (!-d $rootFolder) {
 }
 
 my $hashFile="${stat_root}hash_map.txt";
-my $sortedFile="${stat_root}hash_map_sorted.txt";
+my $filteredFile="${stat_root}hash_map.filtered.$threshold.txt";
+my $sortedFile="${stat_root}hash_map.sorted.txt";
 
 if (!-e $hashFile) {
 
@@ -29,14 +31,31 @@ if (!-e $hashFile) {
   `cat ${stat_root}hash_table*.txt > $hashFile`;
 }
 
+if (!-e $filteredFile) {
+
+	print "Filter tables...\n";
+
+	open(FILE,"<$hashFile") or die "Can't open: $hashFile\n";
+	open(my $rfh, ">$filteredFile") or die "Can't open for write: $filteredFile\n";
+	while(<FILE>){
+		chomp;
+		my($hash,$file,$lc)=split(/,/);
+		if ($lc>$threshold) {
+			print $rfh "$_\n";
+		}
+	}
+	close(FILE);
+	close($rfh);
+}
+
 if (!-e $sortedFile) {
   print "Sort table...\n";
-  `grep -Ev '^,' $hashFile | sort > $sortedFile`; # Sort the hash table
+  `grep -Ev '^,' $filteredFile | sort > $sortedFile`; # Sort the hash table
 }
 
 print "Get rank...\n";
 
-my @rankings = `cat  $sortedFile | cut -d ',' -f 1 | sort | uniq -c | sort -nr`;
+chomp(my @rankings = `cat  $sortedFile | cut -d ',' -f 1 | sort | uniq -c | sort -nr`);
 
 
 my @topHash;

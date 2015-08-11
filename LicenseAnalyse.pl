@@ -61,14 +61,13 @@ print $log "Listing $ext used: ". $timeDiff->seconds ." sec(s)\n";
 $oldTime = localtime;
 
 print "Generating [$ext] token files...\n";
-print `collect_info/gen_tokens.pl $stat_root $ext`;
+#print `collect_info/gen_tokens.pl $stat_root $ext`;
 
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
 print $log "Generating token files used: ". $timeDiff->seconds ." sec(s)\n";
 
-next;
 
 $oldTime = localtime;
 
@@ -79,12 +78,13 @@ $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
 print $log "Generating hash value used: ". $timeDiff->seconds ." sec(s)\n";
 
+
 $oldTime = localtime;
 
 print "Copying files...\n";
 my $dest_dir = $copied_src;
 #print "copy_files/copy_files.pl $dest_dir $stat_root $ext";
-print `copy_files/copy_files.pl $dest_dir $stat_root $ext`;
+print `copy_files/copy_files.pl $dest_dir $stat_root $ext $threshold`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
