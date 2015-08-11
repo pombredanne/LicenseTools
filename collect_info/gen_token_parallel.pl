@@ -119,7 +119,7 @@ while(<FILE>) {
       alarm 0;
     };
 
-    if ($@ ne "timeout\n") {
+    if ($@ ne "timeout\n" && !-e $token_file) {
       `touch '$ccfxfails'`;
     }
 
