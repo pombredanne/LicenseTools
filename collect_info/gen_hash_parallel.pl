@@ -6,7 +6,7 @@ use File::Basename;
 use DBI;
 use strict;
 
-
+my $update_mode=0;
 
 my $stat_root = $ARGV[0];
 my $section = $ARGV[1];
@@ -89,7 +89,7 @@ while(<FILE>) {
 close(FILE);
 close($rh);
 
-} else {
+} elsif ($update_mode) {
 
 rename $rf, $old_rf;
 
