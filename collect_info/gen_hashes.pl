@@ -8,6 +8,7 @@ my $MAX_PROCESSES = 6;
 my $stat_root = $ARGV[0];
 #my $copied_src = $ARGV[0];
 my $ext = $ARGV[1];
+my $update_mode = $ARGV[2];
 
 
 my $pm = new Parallel::ForkManager($MAX_PROCESSES);
@@ -26,7 +27,7 @@ for (my $i = 0; $i < $count; $i++) {
 
     my $section = $i;
     #print "./gen_token_parallel.pl $stat_root $section $ext \n";
-    print `collect_info/gen_hash_parallel.pl $stat_root $section $ext `;
+    print `collect_info/gen_hash_parallel.pl $stat_root $section $ext $update_mode`;
 
     $pm->finish; # Terminates the child process
 }

@@ -6,12 +6,12 @@ use File::Basename;
 use DBI;
 use strict;
 
-my $update_mode=0;
 
 my $stat_root = $ARGV[0];
 my $section = $ARGV[1];
 my $ext = $ARGV[2];
-my $start_from= $ARGV[3];
+my $update_mode= $ARGV[3];
+my $start_from= $ARGV[4];
 
 
 if (!$start_from) {
