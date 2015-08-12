@@ -31,6 +31,7 @@ my $data_root = "AnalysisData/$ext/";
 my $stat_root = "${data_root}Statistics/";
 my $copied_src = "${data_root}Source/";
 my $licenseChange = "${stat_root}LicenseChanged.csv";
+my $srcUniqList = "${stat_root}SrcUniqList.txt";
 
 if (!-d $stat_root) {
 	# print "make_path($stat_root);\n";
@@ -72,7 +73,7 @@ print $log "Generating token files used: ". $timeDiff->seconds ." sec(s)\n";
 $oldTime = localtime;
 
 print "Generating hash value of token files...\n";
-print `collect_info/gen_hashes.pl $stat_root $ext`;
+#print `collect_info/gen_hashes.pl $stat_root $ext`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -81,10 +82,26 @@ print $log "Generating hash value used: ". $timeDiff->seconds ." sec(s)\n";
 
 $oldTime = localtime;
 
-print "Copying files...\n";
+print "Grouping files...\n";
 my $dest_dir = $copied_src;
+#print "`group/group_files.pl $dest_dir $stat_root $threshold`\n";
+print `group/group_files.pl $dest_dir $stat_root $threshold`;
+
+$newTime = localtime;
+$timeDiff = $newTime - $oldTime;
+print $log "Grouping used: ". $timeDiff->seconds ." sec(s)\n";
+
+
+if (!-e $srcUniqList) {
+   `find $dest_dir -mindepth 1 -maxdepth 1 -type d > '$srcUniqList'`;
+}
+
+
+$oldTime = localtime;
+
+print "Copying files...\n";
 #print "copy_files/copy_files.pl $dest_dir $stat_root $ext";
-print `copy_files/copy_files.pl $dest_dir $stat_root $ext $threshold`;
+#print `copy_files/copy_files.pl $dest_dir $stat_root $ext $threshold`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -95,7 +112,7 @@ $oldTime = localtime;
 
 print "License detection...\n";
 #print "copy_files/copy_files.pl $dest_dir $stat_root $ext";
-print `analyse/license_analyse.pl $dest_dir $ext`;
+print `analyse/license_analyse_no_copy.pl $stat_root '$srcUniqList'`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -105,7 +122,7 @@ print $log "License analysis used: ". $timeDiff->seconds ." sec(s)\n";
 open my $licFh, ">$licenseChange";
 my $changeDetectionTime = 0;
 
-my @folders = `find $dest_dir -mindepth 1 -maxdepth 1 -type d`;
+chomp(my @folders = `cat '$srcUniqList'`);
 
 chomp @folders;
 my $total=@folders;
@@ -122,7 +139,7 @@ foreach my $folder (@folders) {
         my $r = sprintf("%.1f",$process);
         print "[$r%] Done. Check inconsistency for: [$count/$total]";
 
-        my $inconsis = `analyse/check_license_result.pl -d $folder`;
+        my $inconsis = `analyse/check_license_result.pl -d '$folder'`;
 
         if ($inconsis) {
                 print " <-----Inconsis:[$inconsis]";
