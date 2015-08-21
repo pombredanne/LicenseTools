@@ -30,7 +30,8 @@ foreach my $sub (@subs) {
     my $sortedFileRevised="${stat_root}hash_map.sorted.revised.txt";
     my $rankFileRevised="${stat_root}hash_rank.revised.txt";
     my $correctTable = "${stat_root}corrected_hash_table.txt";
-    my $fixing_list = "${stat_root}fixing_list_of_groups.txt";
+    my $fixing_list_new = "${stat_root}fixing_list_of_groups_new.txt";
+    my $fixing_list_update = "${stat_root}fixing_list_of_groups_update.txt";
 
 
     #　Step 1: new comers.
@@ -55,7 +56,7 @@ foreach my $sub (@subs) {
 
         $groupIndex=$count + $startIndex -1;
 
-        `echo '$groupIndex,$hash' >> '$fixing_list'`;
+        `echo '$groupIndex,$hash' >> '$fixing_list_new'`;
 
         my $groupFolder = "${src_root}${groupIndex}/";
         my $fileList = "${groupFolder}list.txt";
@@ -106,7 +107,7 @@ foreach my $sub (@subs) {
 
         `grep '$hash' '$sortedFileRevised' | cut -d ',' -f 2 > '$fileList'`;
 
-        `echo '$groupIndex,$hash' >> '$fixing_list'`;
+        `echo '$groupIndex,$hash' >> '$fixing_list_update'`;
 
         $count++;
     }
