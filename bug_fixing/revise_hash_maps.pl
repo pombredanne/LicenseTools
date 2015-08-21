@@ -91,7 +91,7 @@ foreach my $sub (@subs) {
 #		close($rFh);
 	}
 
-$pm->wait_all_children;
+	$pm->wait_all_children;
 
 	# Make a hash table for look up
 	my %table;
@@ -100,7 +100,7 @@ $pm->wait_all_children;
 	close(FILE);
 
 	foreach my $line (@lines) {
-		my ($hash,$file)=split(/,/);
+		my ($hash,$file)=split(/,/, $line);
 		$table{$file}=$hash;
 	}
 
@@ -118,7 +118,7 @@ $pm->wait_all_children;
 		print "Processing [$count/$total]\r";
 #		`echo 'Processing [$count/$total]' > '$log'`;
 
-		#my $pid = $pm->start and next;
+		my $pid = $pm->start and next;
 
 		my $v=$table{$file};
 		if ($v) {
@@ -130,7 +130,7 @@ $pm->wait_all_children;
 			`echo '$_' >> '$hashTableRevised'`;
 		}
 		
-		#$pm->finish;
+		$pm->finish;
 	}
 
 	close($fh);
