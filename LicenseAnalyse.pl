@@ -119,48 +119,20 @@ $timeDiff = $newTime - $oldTime;
 print $log "License analysis used: ". $timeDiff->seconds ." sec(s)\n";
 
 
-open my $licFh, ">$licenseChange";
-my $changeDetectionTime = 0;
-
-chomp(my @folders = `cat '$srcUniqList'`);
-
-chomp @folders;
-my $total=@folders;
-my $count=0;
-
 $oldTime = localtime;
-foreach my $folder (@folders) {
 
+print "Check license results...\n";
+print `analyse/batch_check_license_result.pl '$licenseChange' '$srcUniqList'`;
 
-        $folder =~ /$copied_src(.*?)$/;
-        my $group_name = $1;
-
-        my $process = 100*$count/$total;
-        my $r = sprintf("%.1f",$process);
-        print "[$r%] Done. Check inconsistency for: [$count/$total]";
-
-        my $inconsis = `analyse/check_license_result.pl -d '$folder'`;
-
-        if ($inconsis) {
-                print " <-----Inconsis:[$inconsis]";
-                print $licFh "$group_name,$folder,$inconsis\n";
-        }
-        else {
-                print " OK.";
-        }
-        print "\n";
-        $count++;
-}
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
-$changeDetectionTime = $timeDiff->seconds;
+my $changeDetectionTime = $timeDiff->seconds;
 
 print "\n";
 print $log "Incon:[$changeDetectionTime]\n";
 
 
-close $licFh;
 }
 
 #print $log "Copying:[$copyTime] Grouping:[$groupTime] Ninka:[$licenseDetectionTime] Incon:[$changeDetectionTime]\n";
