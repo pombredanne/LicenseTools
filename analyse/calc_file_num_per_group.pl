@@ -16,6 +16,8 @@ chomp(my @subs = `find $dir_root -mindepth 1 -maxdepth 1 -type d`);
 
 my $groupCountT=0;
 my $fileCountT=0;
+my $maxfileCountT=0;
+my $txt;
 
 foreach my $sub (@subs) {
 
@@ -27,13 +29,15 @@ foreach my $sub (@subs) {
 
 	my $groupCount=0;
 	my $fileCount=0;
+	my $maxfileCount=0;
 	open(FILE, "<$srcUniqList") or die $!;
 	while(<FILE>) {
 		chomp;
 
 		my $list=$_ . "/list.txt";
-		chomp(my $count=`wc -l '$list'`);
+		chomp(my $count=`wc -l < '$list'`);
 		$fileCount += $count;
+		$maxfileCount = $count>$maxfileCount ? $count : $maxfileCount;
 
 		$groupCount++;
 	}
@@ -41,16 +45,18 @@ foreach my $sub (@subs) {
 
 	$groupCountT+=$groupCount;
 	$fileCountT+=$fileCount;
+	$maxfileCountT = $maxfileCount>$maxfileCountT ? $maxfileCount : $maxfileCountT;
 	
 	my $avg=$fileCount/$groupCount;
 
-	open(FILE, ">$distri") or die $!;
-	print FILE "$sub\nGroupTotal: $groupCount\nFileCount: $fileCount\nAvg: $avg\n";
-	close(FILE);
+#	open(FILE, ">$distri") or die $!;
+#	print FILE "$sub\nGroupTotal: $groupCount\nFileCount: $fileCount\nMaxFileCount: $maxfileCount\nAvg: $avg\n";
+#	close(FILE);
 #	exit;
+$txt.="$sub\nGroupTotal: $groupCount\nFileCount: $fileCount\nMaxFileCount: $maxfileCount\nAvg: $avg\n";
 }
 
 my $avgT=$fileCountT/$groupCountT;
 open(FILE, ">$dist") or die $!;
-print FILE "GroupTotal: $groupCountT\nFileCount: $fileCountT\nAvg: $avgT\n";
+print FILE "GroupTotal: $groupCountT\nFileCount: $fileCountT\nMaxFileCount: $maxfileCountT\nAvg: $avgT\n\n$txt";
 close(FILE);
