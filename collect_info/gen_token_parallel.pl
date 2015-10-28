@@ -51,6 +51,7 @@ my $lines = `wc -l < $fn`;
 chomp($lines);
 
 my @skipList;
+my @skipList2;
 chomp(@skipList=`cat '$skipFn'`) if (-e $skipFn);
 chomp(@skipList2=`cat '$failFn' |sort| uniq`) if (-e $failFn);
 push(@skipList,@skipList2);

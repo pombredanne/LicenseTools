@@ -3,7 +3,7 @@
 use Parallel::ForkManager;
 use strict;
 
-my $MAX_PROCESSES = 3;
+my $MAX_PROCESSES = 6;
 
 my $stat_root = $ARGV[0];
 #my $copied_src = $ARGV[0];

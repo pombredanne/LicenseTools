@@ -62,7 +62,7 @@ print $log "Listing $ext used: ". $timeDiff->seconds ." sec(s)\n";
 $oldTime = localtime;
 
 print "Generating [$ext] token files...\n";
-#print `collect_info/gen_tokens.pl $stat_root $ext`;
+print `collect_info/gen_tokens.pl $stat_root $ext`;
 
 
 $newTime = localtime;
@@ -73,7 +73,7 @@ print $log "Generating token files used: ". $timeDiff->seconds ." sec(s)\n";
 $oldTime = localtime;
 
 print "Generating hash value of token files...\n";
-#print `collect_info/gen_hashes.pl $stat_root $ext`;
+print `collect_info/gen_hashes.pl $stat_root $ext`;
 
 $newTime = localtime;
 $timeDiff = $newTime - $oldTime;
@@ -135,7 +135,6 @@ print $log "Incon:[$changeDetectionTime]\n";
 
 }
 
-#print $log "Copying:[$copyTime] Grouping:[$groupTime] Ninka:[$licenseDetectionTime] Incon:[$changeDetectionTime]\n";
 
 close $log;
 
