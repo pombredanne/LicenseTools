@@ -132,7 +132,7 @@ while(<FILE>) {
   $pm->wait_all_children;
 
   if (-e $token_file) {
-    `perl -i -pe 's/^[^\t]+\t//' '${token_file}'`; # Remove leading line numbers of the token file
+      `sed 's/^[^+]\+//' '${token_file}' > '${token_file}.norm'`; # Remove leading line numbers of the token file
   } elsif (-e $ccfxfails) {
     `echo '$filepath' >> $skipFn`;
   } else {

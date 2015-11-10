@@ -44,6 +44,8 @@ if ($ccfx_type eq 'cpp')  {
 } else {
 }
 
+$ccfx_suffix .= '.norm'; # use normalized token files.
+
 open(my $log, ">${stat_root}log_$section.txt");
 
 my $fn="${stat_root}file_list$section.txt";
