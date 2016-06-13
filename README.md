@@ -1,3 +1,8 @@
+**IMPORTANT**: this project will no longer be maintained. 
+
+Please check out the new version here:
+https://github.com/wyhfrank/LIFinder.
+
 # Descriptions
 
 This repository contains scripts to analyze a target data set (typically a
